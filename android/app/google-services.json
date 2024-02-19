@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "972977227359",
+    "project_id": "arabicdictionary-69da8",
+    "storage_bucket": "arabicdictionary-69da8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972977227359:android:f97491ca0bfcedf628bdea",
+        "android_client_info": {
+          "package_name": "com.arabicdictionaryforspeakersofotherlanguages.arabicdictionaryforspeakersofotherlanguages"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1g5Ou_u9IporeeFH_x1F7K0VLaOsWru8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
