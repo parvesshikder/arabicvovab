@@ -10,6 +10,8 @@ class WordCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isPlaying = wordModel.isPlay;
+
     return InkWell(
       onTap: () {
         // Navigate to WordDetailsScreen when card is tapped
@@ -66,15 +68,16 @@ class WordCard extends ConsumerWidget {
                   const Spacer(),
                   IconButton(
                     onPressed: () {
-                      ref.read(getVocabularyService).playAudio(wordModel.audioUrl);
+                      // Toggle play state for this word
+                      //ref.read(getVocabularyService).toggleAudioPlaying(wordModel.id);
+                      ref.read(getVocabularyService).playAudio(wordModel.audioUrl, wordModel.id);
                     },
-                    icon: ref.read(getVocabularyService).isAudioPlaying ? const Icon(Icons.pause) :  const Icon(Icons.play_arrow),
+                    icon: isPlaying ? const Icon(Icons.pause) :  const Icon(Icons.play_arrow),
                   ),
                   IconButton(
                     icon: Icon(
                       wordModel.isFAv ? Icons.favorite : Icons.favorite_border,
-                      color: wordModel.isFAv ? Colors.black
-                       : Colors.grey,
+                      color: wordModel.isFAv ? Colors.black : Colors.grey,
                     ),
                     onPressed: () {
                       // Toggle favorite status and update using Riverpod

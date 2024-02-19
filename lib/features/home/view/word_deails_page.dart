@@ -4,22 +4,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arabicdictionaryforspeakersofotherlanguages/core/constants/color_constsnts.dart';
 import 'package:arabicdictionaryforspeakersofotherlanguages/features/home/model/word_model.dart';
 
-class WordDetailsScreen extends ConsumerWidget {
+class WordDetailsScreen extends ConsumerStatefulWidget {
   final WordModel wordModel;
 
   WordDetailsScreen({Key? key, required this.wordModel}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  _WordDetailsScreenState createState() => _WordDetailsScreenState();
+}
+
+class _WordDetailsScreenState extends ConsumerState<WordDetailsScreen> {
+  @override
+  Widget build(BuildContext context) {
     final word = ref.watch(getVocabularyService);
     final vocabularyList = word.vocabularyList;
+    final boolknow = word.isAudioPlaying;
 
     // Function to check if a word is in the vocabularyList and return the matching WordModel
     WordModel? getVocabularyWordModel(String word) {
       return vocabularyList.firstWhereOrNull((model) => model.word == word);
     }
 
-// Function to highlight a word if it's in the vocabularyList
+    // Function to highlight a word if it's in the vocabularyList
     Widget highlightWord(String text) {
       WordModel? vocabularyWordModel = getVocabularyWordModel(text);
 
@@ -74,7 +80,7 @@ class WordDetailsScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Image.network(
-                    wordModel.imageUrl,
+                    widget.wordModel.imageUrl,
                     height: 200,
                     width: 200,
                   ),
@@ -86,9 +92,9 @@ class WordDetailsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          wordModel.word.length > 20
-                              ? '${wordModel.word.substring(0, 20)}...'
-                              : wordModel.word,
+                          widget.wordModel.word.length > 20
+                              ? '${widget.wordModel.word.substring(0, 20)}...'
+                              : widget.wordModel.word,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 26,
@@ -96,24 +102,31 @@ class WordDetailsScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          wordModel.meaning.length > 60
-                              ? '${wordModel.meaning.substring(0, 60)}...'
-                              : wordModel.meaning,
+                          widget.wordModel.meaning.length > 60
+                              ? '${widget.wordModel.meaning.substring(0, 60)}...'
+                              : widget.wordModel.meaning,
                           style: const TextStyle(
                             fontWeight: FontWeight.normal,
                             fontSize: 16,
                             color: Colors.black,
                           ),
                         ),
-                        IconButton(
-                          onPressed: () {
-                            ref
-                                .read(getVocabularyService)
-                                .playAudio(wordModel.audioUrl);
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final isAudioPlaying =
+                                ref.watch(getVocabularyService).isAudioPlaying2;
+
+                            return IconButton(
+                              onPressed: () {
+                                ref.read(getVocabularyService).playAudio(
+                                    widget.wordModel.audioUrl,
+                                    widget.wordModel.id);
+                              },
+                              icon: isAudioPlaying
+                                  ? const Icon(Icons.pause)
+                                  : const Icon(Icons.play_arrow),
+                            );
                           },
-                          icon: word.isAudioPlaying
-                              ? const Icon(Icons.pause)
-                              : const Icon(Icons.play_arrow),
                         ),
                       ],
                     ),
@@ -131,9 +144,9 @@ class WordDetailsScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Text(
-                  wordModel.partsOfSpeech.length > 50
-                      ? '${wordModel.partsOfSpeech.substring(0, 50)}...'
-                      : wordModel.partsOfSpeech,
+                  widget.wordModel.partsOfSpeech.length > 50
+                      ? '${widget.wordModel.partsOfSpeech.substring(0, 50)}...'
+                      : widget.wordModel.partsOfSpeech,
                   textAlign: TextAlign.end,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -156,7 +169,7 @@ class WordDetailsScreen extends ConsumerWidget {
             Flexible(
               child: Wrap(
                 alignment: WrapAlignment.end,
-                children: getWordWidgets(wordModel.explanation),
+                children: getWordWidgets(widget.wordModel.explanation),
               ),
             ),
             const SizedBox(height: 20),
@@ -172,14 +185,14 @@ class WordDetailsScreen extends ConsumerWidget {
             Flexible(
               child: Wrap(
                 alignment: WrapAlignment.end,
-                children: getWordWidgets(wordModel.example1),
+                children: getWordWidgets(widget.wordModel.example1),
               ),
             ),
             const SizedBox(height: 10),
             Flexible(
               child: Wrap(
                 alignment: WrapAlignment.end,
-                children: getWordWidgets(wordModel.example2),
+                children: getWordWidgets(widget.wordModel.example2),
               ),
             ),
           ],

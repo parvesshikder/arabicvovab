@@ -10,7 +10,7 @@ class WordModel {
   final String meaning;
   final String imageUrl;
   final String audioUrl;
-  bool isPlay;
+  bool isPlay; // Added field to track play state
   bool isFAv;
   final String example1;
   final String example2;
@@ -24,20 +24,20 @@ class WordModel {
     required this.imageUrl,
     required this.audioUrl,
     this.isFAv = false,
-    this.isPlay = false,
+    this.isPlay = false, // Initialized play state to false
     required this.example1,
     required this.example2,
     required this.explanation,
     required this.partsOfSpeech,
   });
 
-  WordModel copyWith({bool? isFAv}) {
+  WordModel copyWith({bool? isFAv, bool? isPlay}) {
     return WordModel(
       id: id,
       word: word,
       meaning: meaning,
       imageUrl: imageUrl,
-      isPlay: isPlay,
+      isPlay: isPlay ?? this.isPlay, // Updated isPlay field
       isFAv: isFAv ?? this.isFAv,
       example1: example1,
       example2: example2,
@@ -63,10 +63,19 @@ class GetVocabularyService extends ChangeNotifier {
   bool _isAudioPlaying = false;
   bool get isAudioPlaying => _isAudioPlaying;
 
+    bool _isAudioPlaying2 = false;
+  bool get isAudioPlaying2 => _isAudioPlaying2;
+
   // Function to toggle play/pause state
-  void toggleAudioPlaying() {
-    _isAudioPlaying = !_isAudioPlaying;
-    notifyListeners();
+  void toggleAudioPlaying(String id) {
+    _isAudioPlaying2 = !_isAudioPlaying2;
+    final index = _vocabularyList.indexWhere((element) => element.id == id);
+    if (index != -1) {
+      _vocabularyList[index] = _vocabularyList[index].copyWith(
+        isPlay: !_vocabularyList[index].isPlay,
+      );
+      notifyListeners(); // Ensure to notify listeners after updating state
+    }
   }
 
   Future<void> fetchInitialData() async {
@@ -127,11 +136,11 @@ class GetVocabularyService extends ChangeNotifier {
     }
   }
 
-  Future<void> playAudio(String audioUrl) async {
-    toggleAudioPlaying();
+  Future<void> playAudio(String audioUrl, String id) async {
+    toggleAudioPlaying(id);
     final player = audio.AudioPlayer();
     await player.play(UrlSource(audioUrl));
-    toggleAudioPlaying();
+    toggleAudioPlaying(id);
   }
 
    void search(String query) {
