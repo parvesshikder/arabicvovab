@@ -10,9 +10,7 @@ class WordCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPlaying = wordModel.isPlay;
-
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         // Navigate to WordDetailsScreen when card is tapped
         Navigator.push(
@@ -24,72 +22,77 @@ class WordCard extends ConsumerWidget {
           ),
         );
       },
-      child: Card(
-        margin: const EdgeInsets.all(0),
-        child: ClipRRect(
-          child: Container(
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Image.network(wordModel.imageUrl, height: 50,width: 50,),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 150,
-                    child: Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            wordModel.word.length > 20
-                                ? '${wordModel.word.substring(0, 20)}...'
-                                : wordModel.word,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Text(
-                            wordModel.meaning.length > 60
-                                ? '${wordModel.meaning.substring(0, 60)}...'
-                                : wordModel.meaning,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.normal,
-                              fontSize: 10,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
+      child: Container(
+        height: 80,
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              Image.network(
+                wordModel.imageUrl,
+                height: 50,
+                width: 50,
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 150,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      wordModel.word.length > 20
+                          ? '${wordModel.word.substring(0, 20)}...'
+                          : wordModel.word,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black,
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      // Toggle play state for this word
-                      //ref.read(getVocabularyService).toggleAudioPlaying(wordModel.id);
-                      ref.read(getVocabularyService).playAudio(wordModel.audioUrl, wordModel.id);
-                    },
-                    icon: isPlaying ? const Icon(Icons.pause) :  const Icon(Icons.play_arrow),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      wordModel.isFAv ? Icons.favorite : Icons.favorite_border,
-                      color: wordModel.isFAv ? Colors.black : Colors.grey,
+                    Text(
+                      wordModel.meaning.length > 60
+                          ? '${wordModel.meaning.substring(0, 60)}...'
+                          : wordModel.meaning,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 10,
+                        color: Colors.black,
+                      ),
                     ),
-                    onPressed: () {
-                      // Toggle favorite status and update using Riverpod
-                      ref.read(getVocabularyService).toggleFavorite(
-                            wordModel.id,
-                            !wordModel.isFAv,
-                          );
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              IconButton(
+                onPressed: () {
+                  final audioPlayer =
+                      ref.read(getVocabularyService).audioPlayer;
+                  final service = ref.read(getVocabularyService.notifier);
+                  service.playAudio(wordModel.audioUrl);
+
+                  // Update the playing state for the pressed WordCard
+                  ref
+                      .read(getVocabularyService.notifier)
+                      .updatePlayingState(wordModel.id, true);
+                },
+                icon: wordModel.isCurrentlyPlaying
+                    ? const Icon(Icons.pause)
+                    : const Icon(Icons.play_arrow),
+              ),
+              IconButton(
+                icon: Icon(
+                  wordModel.isFAv ? Icons.favorite : Icons.favorite_border,
+                  color: wordModel.isFAv ? Colors.black : Colors.grey,
+                ),
+                onPressed: () {
+                  // Toggle favorite status and update using Riverpod
+                  ref.read(getVocabularyService).toggleFavorite(
+                        wordModel.id,
+                        !wordModel.isFAv,
+                      );
+                },
+              ),
+            ],
           ),
         ),
       ),

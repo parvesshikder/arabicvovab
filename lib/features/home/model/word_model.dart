@@ -1,55 +1,63 @@
+import 'package:audioplayers/audioplayers.dart' as audio;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:audioplayers/audioplayers.dart' as audio;
 
 class WordModel {
   final String id;
   final String word;
   final String meaning;
   final String imageUrl;
-  final String audioUrl;
-  bool isPlay; // Added field to track play state
-  bool isFAv;
+  final bool isFAv;
+  final bool isPlay;
   final String example1;
   final String example2;
   final String explanation;
+  final String audioUrl;
   final String partsOfSpeech;
+
+  bool isCurrentlyPlaying;
 
   WordModel({
     required this.id,
     required this.word,
     required this.meaning,
     required this.imageUrl,
-    required this.audioUrl,
-    this.isFAv = false,
-    this.isPlay = false, // Initialized play state to false
+    required this.isFAv,
+    required this.isPlay,
     required this.example1,
     required this.example2,
     required this.explanation,
+    required this.audioUrl,
     required this.partsOfSpeech,
+    this.isCurrentlyPlaying = false,
   });
 
-  WordModel copyWith({bool? isFAv, bool? isPlay}) {
+  WordModel copyWith({
+    bool? isFAv,
+    bool? isPlay,
+    bool? isCurrentlyPlaying,
+  }) {
     return WordModel(
-      id: id,
-      word: word,
-      meaning: meaning,
-      imageUrl: imageUrl,
-      isPlay: isPlay ?? this.isPlay, // Updated isPlay field
+      id: this.id,
+      word: this.word,
+      meaning: this.meaning,
+      imageUrl: this.imageUrl,
       isFAv: isFAv ?? this.isFAv,
-      example1: example1,
-      example2: example2,
-      explanation: explanation,
-      audioUrl: audioUrl,
-      partsOfSpeech: partsOfSpeech,
+      isPlay: isPlay ?? this.isPlay,
+      example1: this.example1,
+      example2: this.example2,
+      explanation: this.explanation,
+      audioUrl: this.audioUrl,
+      partsOfSpeech: this.partsOfSpeech,
+      isCurrentlyPlaying: isCurrentlyPlaying ?? this.isCurrentlyPlaying,
     );
   }
 }
 
 class GetVocabularyService extends ChangeNotifier {
-   final CollectionReference _vocabularyCollection =
+  final CollectionReference _vocabularyCollection =
       FirebaseFirestore.instance.collection('vocabulary');
 
   bool _isLoading = false;
@@ -60,31 +68,25 @@ class GetVocabularyService extends ChangeNotifier {
 
   List<WordModel> _originalVocabularyList = [];
 
+  final audio.AudioPlayer _audioPlayer = audio.AudioPlayer();
+  audio.AudioPlayer get audioPlayer => _audioPlayer;
+
+  String? _currentPlayingAudioUrl;
   bool _isAudioPlaying = false;
   bool get isAudioPlaying => _isAudioPlaying;
 
-    bool _isAudioPlaying2 = false;
-  bool get isAudioPlaying2 => _isAudioPlaying2;
-
-  // Function to toggle play/pause state
-  void toggleAudioPlaying(String id) {
-    _isAudioPlaying2 = !_isAudioPlaying2;
-    final index = _vocabularyList.indexWhere((element) => element.id == id);
-    if (index != -1) {
-      _vocabularyList[index] = _vocabularyList[index].copyWith(
-        isPlay: !_vocabularyList[index].isPlay,
-      );
-      notifyListeners(); // Ensure to notify listeners after updating state
-    }
-  }
+  final Map<String, WordModel> _cache = {};
 
   Future<void> fetchInitialData() async {
     _isLoading = true;
 
     try {
-      QuerySnapshot querySnapshot = await _vocabularyCollection.limit(10).get();
-      _vocabularyList = querySnapshot.docs.map((doc) {
-        return WordModel(
+      if (_cache.isNotEmpty) {
+        _vocabularyList = _cache.values.toList();
+      } else {
+        QuerySnapshot querySnapshot = await _vocabularyCollection.limit(10).get();
+        _vocabularyList = querySnapshot.docs.map((doc) {
+          return WordModel(
             id: doc.id,
             word: doc['word'],
             meaning: doc['meaning'],
@@ -95,8 +97,14 @@ class GetVocabularyService extends ChangeNotifier {
             example2: doc['example2'],
             explanation: doc['explanation'],
             audioUrl: doc['audioUrl'],
-            partsOfSpeech: doc['partsOfSpeech']);
-      }).toList();
+            partsOfSpeech: doc['partsOfSpeech'],
+          );
+        }).toList();
+
+        _vocabularyList.forEach((word) {
+          _cache[word.id] = word;
+        });
+      }
 
       _originalVocabularyList = List.from(_vocabularyList);
 
@@ -112,13 +120,8 @@ class GetVocabularyService extends ChangeNotifier {
 
   Future<void> toggleFavorite(String id, bool isFavorite) async {
     try {
-      // Perform local update first
       _updateLocalFavoriteStatus(id, isFavorite);
-
-      // Update Firestore
       await _vocabularyCollection.doc(id).update({'isFAv': isFavorite});
-
-      // Notify listeners after updating Firestore
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
@@ -128,7 +131,6 @@ class GetVocabularyService extends ChangeNotifier {
   }
 
   void _updateLocalFavoriteStatus(String id, bool isFavorite) {
-    // Find the WordModel in the list and update the isFAv field locally
     final index = _vocabularyList.indexWhere((element) => element.id == id);
     if (index != -1) {
       _vocabularyList[index] =
@@ -136,14 +138,26 @@ class GetVocabularyService extends ChangeNotifier {
     }
   }
 
-  Future<void> playAudio(String audioUrl, String id) async {
-    toggleAudioPlaying(id);
-    final player = audio.AudioPlayer();
-    await player.play(UrlSource(audioUrl));
-    toggleAudioPlaying(id);
+   Future<void> playAudio(String audioUrl) async {
+    toggleAudioPlaying();
+
+    // Start playing the selected audio
+    await _audioPlayer.play(UrlSource(audioUrl));
+
+    // Set the currently playing audio URL
+    _currentPlayingAudioUrl = audioUrl;
+
+    // Toggle play/pause state after a short delay
+    await Future.delayed(const Duration(seconds: 1));
+    toggleAudioPlaying();
   }
 
-   void search(String query) {
+  void toggleAudioPlaying() {
+    _isAudioPlaying = !_isAudioPlaying;
+    notifyListeners();
+  }
+
+  void search(String query) {
     if (query.isEmpty) {
       _vocabularyList = List.from(_originalVocabularyList);
     } else {
@@ -154,6 +168,23 @@ class GetVocabularyService extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  void updatePlayingState(String wordId, bool isCurrentlyPlaying) async {
+    final index = _vocabularyList.indexWhere((element) => element.id == wordId);
+    if (index != -1) {
+      _vocabularyList[index] = _vocabularyList[index].copyWith(
+        isCurrentlyPlaying: isCurrentlyPlaying,
+      );
+      notifyListeners();
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      _vocabularyList[index] = _vocabularyList[index].copyWith(
+        isCurrentlyPlaying: false,
+      );
+      notifyListeners();
+    }
   }
 }
 

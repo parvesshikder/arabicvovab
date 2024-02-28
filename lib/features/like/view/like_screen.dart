@@ -15,13 +15,12 @@ class LikeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: ColorConstants.backgroundColor,
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            const SizedBox(height: 40),
-            const Text(
+      appBar: AppBar(
+        toolbarHeight: 70,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
               'FAVOURITE WORD',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -29,32 +28,43 @@ class LikeScreen extends ConsumerWidget {
                 color: ColorConstants.mainText,
               ),
             ),
-            const SizedBox(height: 0),
-            Expanded(
-              child: likedWords.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: ListView.builder(
-                        itemCount: likedWords.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return WordCard(wordModel: likedWords[index]);
-                        },
-                      ),
-                    )
-                  : const Center(
-                      child: Text(
-                        'No Liked Words Found!',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: ColorConstants.secondaryText,
-                        ),
-                      ),
-                    ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+      body: likedWords.isNotEmpty
+          ? Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: likedWords.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return Column(
+                      children: [
+                        WordCard(
+                          wordModel: likedWords[index],
+                        ),
+                        Divider(
+                          height: 0.5,
+                          color: ColorConstants.mainText.withOpacity(0.1),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            )
+          : const Center(
+              child: Text(
+                'No Liked Words Found!',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: ColorConstants.secondaryText,
+                ),
+              ),
+            ),
     );
   }
 }
